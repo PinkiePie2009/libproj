@@ -1,0 +1,203 @@
+{% extends "projects/base.html" %}
+{% load static %}  <!-- Добавьте эту строку в САМОМ НАЧАЛЕ после extends -->
+
+{% block title %}Главная - Библиотека проектов ФМШ СФУ{% endblock %}
+
+{% block content %}
+<!-- Герой-секция -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4">Библиотека проектов ФМШ СФУ</h1>
+                <p class="lead mb-4">Централизованное хранение учебных и исследовательских работ учеников. Находите, делитесь и вдохновляйтесь.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'project_list' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-search"></i> Найти проект
+                    </a>
+                    {% if user.is_authenticated %}
+                        {% if user.pupil %}
+                        <a href="{% url 'project_add' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-plus"></i> Добавить проект
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-user-plus"></i> Присоединиться
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block">
+                <div class="text-center">
+                    <!-- Здесь ваша эмблема -->
+                    <img src="{% static 'images/fmssfu.png' %}"
+                         alt="Эмблема ФМШ СФУ"
+                         class="img-fluid"
+                         style="max-height: 250px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Последние проекты -->
+<section class="container mb-5">
+    <h2 class="mb-4">Последние добавленные проекты</h2>
+
+    {% if latest_projects %}
+    <div class="row">
+        {% for project in latest_projects %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.title|truncatechars:60 }}</h5>
+                    <p class="card-text text-muted">
+                        <small>
+                            <i class="fas fa-user-graduate"></i>
+                            {% for pupil in project.pupils.all|slice:":2" %}
+                                {{ pupil.user.get_full_name|default:pupil.user.username }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if project.pupils.count > 2 %} и др.{% endif %}
+                        </small>
+                    </p>
+                    <p class="card-text">
+                        {{ project.description|truncatechars:100 }}
+                    </p>
+                    <div class="mb-2">
+                        <span class="badge bg-primary">
+                            <i class="fas fa-book"></i> {{ project.subject.name }}
+                        </span>
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-calendar"></i> {{ project.year }}
+                        </span>
+                        <span class="badge bg-info">
+                            <i class="fas fa-eye"></i> {{ project.views }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-external-link-alt"></i> Подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'project_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> Смотреть все проекты
+        </a>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <p class="mb-0">В библиотеке пока нет проектов. Будьте первым!</p>
+    </div>
+    {% endif %}
+</section>
+
+<!-- Популярные проекты -->
+{% if popular_projects %}
+<section class="container mb-5">
+    <h2 class="mb-4">Популярные проекты</h2>
+    <div class="row">
+        {% for project in popular_projects %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.title|truncatechars:50 }}</h5>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-user-graduate"></i>
+                        {% for pupil in project.pupils.all %}
+                            {{ pupil.user.get_full_name|default:pupil.user.username }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    <p class="card-text">
+                        {{ project.description|truncatechars:80 }}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-primary">{{ project.subject.name }}</span>
+                        <span class="text-muted small">
+                            <i class="fas fa-eye"></i> {{ project.views }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                        Подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Как это работает -->
+<section class="container mb-5">
+    <h2 class="mb-4">Как работает система</h2>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-user-plus fa-2x text-white"></i>
+                </div>
+                <h5>Регистрация</h5>
+                <p>Создайте аккаунт ученика</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-upload fa-2x text-white"></i>
+                </div>
+                <h5>Загрузка</h5>
+                <p>Добавьте свой проект на модерацию</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-check-circle fa-2x text-white"></i>
+                </div>
+                <h5>Модерация</h5>
+                <p>Преподаватель проверяет проект</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px;">
+                    <i class="fas fa-search fa-2x text-white"></i>
+                </div>
+                <h5>Публикация</h5>
+                <p>Проект становится доступен всем</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #2c3e50, #3498db);
+        color: white;
+        padding: 80px 0;
+        margin-bottom: 40px;
+        border-radius: 0 0 20px 20px;
+    }
+    .card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: none;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+    }
+</style>
+{% endblock %}

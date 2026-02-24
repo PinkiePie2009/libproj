@@ -1,0 +1,222 @@
+=<!-- projects/templates/projects/project_detail.html -->
+{% extends "projects/base.html" %}
+
+{% block title %}{{ project.title }} - Библиотека проектов{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Навигация -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Проекты</a></li>
+            <li class="breadcrumb-item active">{{ project.title|truncatechars:50 }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Основная информация о проекте -->
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ project.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Статус проекта -->
+                    <!-- projects/templates/projects/project_detail.html -->
+                    <!-- Добавьте после заголовка, перед описанием -->
+
+                    <!-- Статус проекта и информация о модерации -->
+                    <div class="mb-3">
+                        {% if project.status == 'published' %}
+                            <span class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-check-circle"></i> Опубликован
+                            </span>
+                        {% elif project.status == 'pending' %}
+                            <span class="badge bg-warning text-dark fs-6 p-2">
+                                <i class="fas fa-clock"></i> На модерации
+                            </span>
+                        {% elif project.status == 'rejected' %}
+                            <span class="badge bg-danger fs-6 p-2">
+                                <i class="fas fa-times-circle"></i> Отклонен
+                            </span>
+                        {% elif project.status == 'revision' %}
+                            <span class="badge bg-info text-dark fs-6 p-2">
+                                <i class="fas fa-edit"></i> Требует доработки
+                            </span>
+                        {% endif %}
+
+                        <span class="badge bg-secondary fs-6 p-2">
+                            <i class="fas fa-eye"></i> {{ project.views }} просмотров
+                        </span>
+                    </div>
+
+                    <!-- Комментарий модератора (если есть) -->
+                    {% if project.moderation_comment %}
+                    <div class="alert alert-{% if project.status == 'rejected' %}danger{% elif project.status == 'revision' %}info{% else %}secondary{% endif %}">
+                        <h6><i class="fas fa-comment-dots"></i> Комментарий модератора:</h6>
+                        <p class="mb-0">{{ project.moderation_comment }}</p>
+                        {% if project.moderated_by %}
+                        <small class="text-muted">
+                            Проверил: {{ project.moderated_by.user.get_full_name }},
+                            {{ project.moderated_at|date:"d.m.Y H:i" }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Кнопка доработки для отклоненных проектов -->
+                    {% if project.status == 'revision' and user.is_authenticated and project.pupils.all.0.user == user %}
+                    <div class="mt-3 mb-4">
+                        <a href="{% url 'resubmit_project' project.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Доработать проект
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Описание -->
+                    <h5 class="mt-4">Описание</h5>
+                    <p class="text-justify">{{ project.description|linebreaks }}</p>
+
+                    <!-- Ключевые слова -->
+                    {% if project.keywords %}
+                    <div class="mt-3">
+                        <h6>Ключевые слова:</h6>
+                        {% for keyword in project.keywords.split %}
+                            <span class="badge bg-secondary me-1">{{ keyword }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Файл проекта -->
+                    {% if project.project_file %}
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6><i class="fas fa-file"></i> Файл проекта:</h6>
+                        <a href="{% url 'download_project' project.pk %}" class="btn btn-success">
+                            <i class="fas fa-download"></i> Скачать файл
+                        </a>
+                        <small class="text-muted ms-3">
+                            {{ project.project_file.name|slice:"20:" }}
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Кнопки редактирования (для авторов) -->
+                    {% if user.is_authenticated and project.pupils.all.0.user == user or user.is_staff %}
+                    <div class="mt-4">
+                        <a href="{% url 'project_edit' project.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Комментарии -->
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-comments"></i> Комментарии</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                        <form method="post" class="mb-4">
+                            {% csrf_token %}
+                            {{ comment_form.text }}
+                            <button type="submit" class="btn btn-primary mt-2">
+                                <i class="fas fa-paper-plane"></i> Отправить
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <a href="{% url 'login' %}">Войдите</a> чтобы оставить комментарий.
+                        </div>
+                    {% endif %}
+
+                    {% if comments %}
+                        {% for comment in comments %}
+                        <div class="comment mb-3 p-3 bg-light rounded">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ comment.user.get_full_name|default:comment.user.username }}</strong>
+                                <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            <p class="mb-0 mt-2">{{ comment.text }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Боковая панель с информацией -->
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Информация</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-book text-primary"></i>
+                            <strong>Предмет:</strong> {{ project.subject.name }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-user-tie text-success"></i>
+                            <strong>Руководитель:</strong> {{ project.teacher.user.get_full_name }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-users text-info"></i>
+                            <strong>Авторы:</strong>
+                            <ul class="mt-1">
+                                {% for pupil in project.pupils.all %}
+                                <li>{{ pupil.user.get_full_name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-calendar text-warning"></i>
+                            <strong>Год:</strong> {{ project.year }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock text-secondary"></i>
+                            <strong>Добавлен:</strong> {{ project.created_at|date:"d.m.Y" }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Похожие проекты -->
+            {% if similar_projects %}
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-project-diagram"></i> Похожие проекты</h5>
+                </div>
+                <div class="card-body">
+                    {% for sim in similar_projects %}
+                    <div class="mb-2 pb-2 {% if not forloop.last %}border-bottom{% endif %}">
+                        <a href="{% url 'project_detail' sim.pk %}" class="text-decoration-none">
+                            <h6>{{ sim.title|truncatechars:40 }}</h6>
+                            <small class="text-muted">{{ sim.year }} год</small>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .comment {
+        transition: background-color 0.3s;
+    }
+    .comment:hover {
+        background-color: #e9ecef !important;
+    }
+    .text-justify {
+        text-align: justify;
+    }
+</style>
+{% endblock %}

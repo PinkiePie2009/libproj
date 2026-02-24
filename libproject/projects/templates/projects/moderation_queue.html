@@ -1,0 +1,131 @@
+<!-- projects/templates/projects/moderation_queue.html -->
+{% extends "projects/base.html" %}
+
+{% block title %}Модерация проектов{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        <i class="fas fa-clipboard-check"></i> Модерация проектов
+    </h1>
+
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">На модерации</h5>
+                    <h2>{{ stats.pending }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">На доработке</h5>
+                    <h2>{{ stats.revision }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Опубликовано</h5>
+                    <h2>{{ stats.published }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Отклонено</h5>
+                    <h2>{{ stats.rejected }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Статус:</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>
+                            На модерации
+                        </option>
+                        <option value="revision" {% if current_status == 'revision' %}selected{% endif %}>
+                            Требуют доработки
+                        </option>
+                        <option value="published" {% if current_status == 'published' %}selected{% endif %}>
+                            Опубликованные
+                        </option>
+                        <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>
+                            Отклоненные
+                        </option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Список проектов -->
+    {% if projects %}
+        <div class="row">
+            {% for project in projects %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header
+                        {% if project.status == 'pending' %}bg-warning
+                        {% elif project.status == 'revision' %}bg-info
+                        {% elif project.status == 'published' %}bg-success text-white
+                        {% elif project.status == 'rejected' %}bg-danger text-white
+                        {% endif %}">
+                        <h5 class="mb-0">{{ project.title|truncatechars:50 }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">
+                            <i class="fas fa-user-graduate"></i>
+                            {% for pupil in project.pupils.all %}
+                                {{ pupil.user.get_full_name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                        <p class="card-text">{{ project.description|truncatechars:150 }}</p>
+
+                        <div class="mb-2">
+                            <span class="badge bg-primary">{{ project.subject.name }}</span>
+                            <span class="badge bg-secondary">{{ project.year }} год</span>
+                        </div>
+
+                        {% if project.moderation_comment %}
+                        <div class="alert alert-light small p-2">
+                            <strong>Комментарий:</strong> {{ project.moderation_comment|truncatechars:50 }}
+                        </div>
+                        {% endif %}
+
+                        <p class="text-muted small mb-0">
+                            Добавлен: {{ project.created_at|date:"d.m.Y H:i" }}
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'moderate_project' project.pk %}" class="btn btn-primary">
+                            <i class="fas fa-clipboard-check"></i> Проверить
+                        </a>
+                        <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-eye"></i> Просмотр
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="fas fa-check-circle fa-4x mb-3"></i>
+            <h4>Нет проектов в этой категории</h4>
+            <p>Все проекты проверены!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

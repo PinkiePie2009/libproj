@@ -1,0 +1,93 @@
+<!-- projects/templates/projects/my_submissions.html -->
+{% extends "projects/base.html" %}
+
+{% block title %}Мои проекты{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        <i class="fas fa-file-alt"></i> Мои проекты
+    </h1>
+
+    <div class="mb-4">
+        <a href="{% url 'project_add' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Отправить новый проект
+        </a>
+    </div>
+
+    {% if projects %}
+        <div class="row">
+            {% for project in projects %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-header
+                        {% if project.status == 'published' %}bg-success text-white
+                        {% elif project.status == 'pending' %}bg-warning
+                        {% elif project.status == 'revision' %}bg-info
+                        {% elif project.status == 'rejected' %}bg-danger text-white
+                        {% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ project.title|truncatechars:40 }}</h5>
+                            <span>
+                                {% if project.status == 'published' %}
+                                    <i class="fas fa-check-circle"></i> Опубликован
+                                {% elif project.status == 'pending' %}
+                                    <i class="fas fa-clock"></i> На модерации
+                                {% elif project.status == 'revision' %}
+                                    <i class="fas fa-edit"></i> На доработке
+                                {% elif project.status == 'rejected' %}
+                                    <i class="fas fa-times-circle"></i> Отклонен
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ project.description|truncatechars:150 }}</p>
+
+                        <div class="mb-2">
+                            <span class="badge bg-primary">{{ project.subject.name }}</span>
+                            <span class="badge bg-secondary">{{ project.year }} год</span>
+                        </div>
+
+                        <!-- Комментарий модератора -->
+                        {% if project.moderation_comment %}
+                        <div class="alert alert-{% if project.status == 'rejected' %}danger{% elif project.status == 'revision' %}info{% else %}light{% endif %} mt-2">
+                            <strong>Комментарий модератора:</strong>
+                            <p class="mb-0">{{ project.moderation_comment }}</p>
+                        </div>
+                        {% endif %}
+
+                        <p class="text-muted small mb-0">
+                            Отправлен: {{ project.created_at|date:"d.m.Y H:i" }}
+                            {% if project.moderated_at %}
+                            <br>Проверен: {{ project.moderated_at|date:"d.m.Y H:i" }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'project_detail' project.pk %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i> Просмотр
+                        </a>
+
+                        {% if project.status == 'revision' %}
+                        <a href="{% url 'resubmit_project' project.pk %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Доработать
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="fas fa-folder-open fa-4x mb-3 text-muted"></i>
+            <h4>У вас пока нет проектов</h4>
+            <p>Отправьте свой первый проект на модерацию!</p>
+            <a href="{% url 'project_add' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Отправить проект
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
